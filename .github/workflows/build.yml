@@ -1,8 +1,11 @@
-name: Build
+name: Release
 
 on:
   push:
     tags: ["v*"]
+
+permissions:
+  contents: write
 
 jobs:
   test:
@@ -39,3 +42,17 @@ jobs:
         with:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - run: chmod +x ports-linux-*
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" --generate-notes ports-*
